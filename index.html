@@ -198,6 +198,17 @@
             });
         }
 
+        async function addComment(tweetId, content) {
+            if (!content.trim()) return;
+            const ref = doc(db, "tweets", tweetId);
+            const comment = {
+                author: currentUser.username,
+                content,
+                timestamp: new Date().toISOString()
+            };
+            await updateDoc(ref, { comments: arrayUnion(comment) });
+        }
+
         async function toggleFollow(targetUsername) {
             if (targetUsername === currentUser.username) return;
 
@@ -206,12 +217,24 @@
             const isFollowing = currentUser.following.includes(targetUsername);
 
             try {
-                // Optimistic UI update
+                // Optimistic UI update for Current User
                 if (isFollowing) {
                     currentUser.following = currentUser.following.filter(u => u !== targetUsername);
                 } else {
                     currentUser.following.push(targetUsername);
                 }
+                
+                // Optimistic UI update for Target User (Follower Count)
+                if (usersCache[targetUsername]) {
+                    const tUser = usersCache[targetUsername];
+                    if(!tUser.followers) tUser.followers = [];
+                    if(isFollowing) {
+                        tUser.followers = tUser.followers.filter(u => u !== currentUser.username);
+                    } else {
+                        tUser.followers.push(currentUser.username);
+                    }
+                }
+
                 // Save optimism
                 localStorage.setItem('user_session', JSON.stringify(currentUser));
                 render(); // Re-render immediately
@@ -226,14 +249,12 @@
                 }
             } catch (e) {
                 console.error("Follow failed", e);
-                // Revert on fail (simplified)
-                initApp(); 
+                initApp(); // Reset logic on fail
             }
         }
 
         async function updateProfile(data) {
             await updateDoc(doc(db, "users", currentUser.username), data);
-            // Wait for listener to update state or force local update
             currentUser = { ...currentUser, ...data };
             localStorage.setItem('user_session', JSON.stringify(currentUser));
             currentRoute = 'profile';
@@ -480,6 +501,7 @@
             }
 
             const isLiked = t.likes?.includes(currentUser.username);
+            const commentCount = t.comments?.length || 0;
 
             el.innerHTML = `
                 <div class="flex gap-4">
@@ -493,9 +515,9 @@
                         ${t.image ? `<div class="mt-3 rounded-xl overflow-hidden border border-white/10 max-h-[500px]"><img src="${t.image}" class="w-full object-cover"></div>` : ''}
                         
                         <div class="flex justify-between mt-3 max-w-sm text-slate-500">
-                            <button class="flex items-center gap-2 group hover:text-blue-400 transition stop-prop">
+                            <button onclick="window.toggleComments('${t.id}')" class="flex items-center gap-2 group hover:text-blue-400 transition stop-prop">
                                 <div class="p-2 rounded-full group-hover:bg-blue-500/10"><i class="fa-regular fa-comment"></i></div>
-                                <span class="text-xs">${t.comments?.length || 0}</span>
+                                <span class="text-xs">${commentCount}</span>
                             </button>
                             <button class="flex items-center gap-2 group hover:text-green-400 transition stop-prop">
                                 <div class="p-2 rounded-full group-hover:bg-green-500/10"><i class="fa-solid fa-retweet"></i></div>
@@ -505,6 +527,27 @@
                                 <span class="text-xs">${t.likes?.length || 0}</span>
                             </button>
                         </div>
+
+                        <!-- Comments Section -->
+                        <div id="comments-${t.id}" class="hidden mt-4 pt-3 border-t border-white/10 stop-prop">
+                            <div class="space-y-4 mb-4">
+                                ${(t.comments || []).map(c => {
+                                    const cAuth = usersCache[c.author] || { name: c.author };
+                                    return `
+                                    <div class="flex gap-3">
+                                        <div class="font-bold text-sm text-slate-300">${cAuth.name}</div>
+                                        <div class="text-sm text-slate-400">${c.content}</div>
+                                    </div>`;
+                                }).join('')}
+                                ${(t.comments || []).length === 0 ? '<div class="text-slate-600 text-sm">No comments yet.</div>' : ''}
+                            </div>
+                            <div class="flex gap-3">
+                                <img src="${currentUser.pfp}" class="w-8 h-8 rounded-full">
+                                <input type="text" id="comment-input-${t.id}" placeholder="Post your reply" class="bg-transparent border-none outline-none text-white placeholder-slate-600 flex-1 text-sm" onkeydown="if(event.key === 'Enter') window.postComment('${t.id}')">
+                                <button onclick="window.postComment('${t.id}')" class="text-blue-400 text-sm font-bold">Reply</button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             `;
@@ -635,13 +678,13 @@
             `;
             content.appendChild(infoCard);
 
-            // 3. Visuals (Grid)
+            // 3. Visuals (Grid) - LEFT ALIGNED
             const visualsCard = document.createElement('div');
             visualsCard.className = "space-y-6 pt-4 border-t border-white/10";
             
-            // Name Preview
+            // Name Preview (Left Aligned)
             visualsCard.innerHTML = `
-                <div class="bg-slate-900/50 rounded-xl p-4 text-center border border-white/5 sticky top-20 z-10 backdrop-blur-xl">
+                <div class="bg-slate-900/50 rounded-xl p-4 text-left flex flex-col items-start border border-white/5 sticky top-20 z-10 backdrop-blur-xl">
                     <div class="text-xs text-slate-500 uppercase font-bold mb-2">Name Preview</div>
                     <span id="namePreview" class="text-3xl font-black block">${currentUser.name}</span>
                 </div>
@@ -823,6 +866,16 @@
             const img = (!imgEl.classList.contains('hidden')) ? imgEl.querySelector('img').src : null;
             await postTweet(txt, img);
             currentRoute = 'feed'; render();
+        };
+
+        // NEW COMMENT HELPERS
+        window.toggleComments = (id) => {
+            document.getElementById(`comments-${id}`).classList.toggle('hidden');
+        };
+        window.postComment = async (id) => {
+            const input = document.getElementById(`comment-input-${id}`);
+            await addComment(id, input.value);
+            input.value = '';
         };
 
         function linkify(text) {
