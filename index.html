@@ -20,16 +20,28 @@
             background-color: #1a1b1e; 
             border-radius: 4px;
         }
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #111214; 
+        }
         .discord-gray-darkest { background-color: #1e1f22; }
         .discord-gray-darker { background-color: #2b2d31; }
         .discord-gray-dark { background-color: #313338; }
         .discord-gray-light { background-color: #383a40; }
         .discord-highlight { background-color: #5865f2; }
-        .discord-highlight-hover:hover { background-color: #4752c4; }
-        .discord-input { background-color: #383a40; }
         
         /* Utility */
         .message-group:hover .message-actions { opacity: 1; }
+        
+        .tab-btn.active {
+            background-color: #3f4147;
+            color: #ffffff;
+            cursor: default;
+        }
+        
+        /* Profile Banner Default */
+        .default-banner {
+            background-color: #5865f2; 
+        }
     </style>
 <script type="importmap">
 {
@@ -66,11 +78,67 @@
         </div>
     </div>
 
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+        <div class="bg-[#313338] w-full max-w-2xl rounded-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-6 overflow-y-auto">
+                <h2 class="text-xl font-bold text-white mb-6">User Profile</h2>
+                
+                <!-- Profile Preview -->
+                <div class="mb-6">
+                    <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Preview</label>
+                    <div class="w-[300px] bg-[#111214] rounded-lg overflow-hidden shadow-lg mx-auto border border-[#232428]">
+                        <div id="settings-preview-banner" class="h-[60px] bg-[#5865f2] bg-cover bg-center"></div>
+                        <div class="px-4 pb-4 relative">
+                            <div class="w-[80px] h-[80px] rounded-full border-[6px] border-[#111214] absolute -top-[40px] bg-[#1e1f22]">
+                                <img id="settings-preview-avatar" src="https://picsum.photos/80/80" class="w-full h-full rounded-full object-cover">
+                                <div class="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-[3px] border-[#111214]"></div>
+                            </div>
+                            <div class="pt-12">
+                                <div id="settings-preview-displayname" class="font-bold text-white text-lg leading-tight">Display Name</div>
+                                <div id="settings-preview-username" class="text-sm text-gray-400">user</div>
+                            </div>
+                            <div class="mt-3 bg-[#1e1f22] rounded p-2 text-xs">
+                                <div class="font-bold uppercase text-gray-300 mb-1 text-[10px]">About Me</div>
+                                <div id="settings-preview-bio" class="text-gray-300 whitespace-pre-wrap">Hello!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="settings-form" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Display Name</label>
+                            <input type="text" id="input-display-name" class="w-full bg-[#1e1f22] text-white p-2 rounded focus:outline-none focus:ring-1 focus:ring-[#5865f2]" placeholder="How you appear to others">
+                        </div>
+                        <div>
+                             <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Avatar URL</label>
+                             <input type="text" id="input-avatar-url" class="w-full bg-[#1e1f22] text-white p-2 rounded focus:outline-none focus:ring-1 focus:ring-[#5865f2]" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">Banner URL</label>
+                        <input type="text" id="input-banner-url" class="w-full bg-[#1e1f22] text-white p-2 rounded focus:outline-none focus:ring-1 focus:ring-[#5865f2]" placeholder="https://...">
+                    </div>
+                     <div>
+                        <label class="block text-xs font-bold text-gray-400 uppercase mb-2">About Me</label>
+                        <textarea id="input-bio" rows="3" class="w-full bg-[#1e1f22] text-white p-2 rounded focus:outline-none focus:ring-1 focus:ring-[#5865f2]" placeholder="Tell us about yourself"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="bg-[#2b2d31] p-4 flex justify-end space-x-2 shrink-0">
+                <button onclick="document.getElementById('settings-modal').classList.add('hidden')" class="px-4 py-2 hover:underline text-white text-sm">Cancel</button>
+                <button onclick="window.app.saveProfile()" class="px-4 py-2 bg-[#5865f2] hover:bg-[#4752c4] text-white rounded text-sm font-medium">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MAIN APP SCREEN -->
     <div id="app-screen" class="hidden flex h-screen w-screen">
         
         <!-- SERVER LIST (Far Left) -->
-        <nav class="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 space-y-2 overflow-y-auto hide-scrollbar shrink-0">
+        <nav class="w-[72px] bg-[#1e1f22] flex flex-col items-center py-3 space-y-2 overflow-y-auto hide-scrollbar shrink-0 z-20">
             <!-- Home/DM Button -->
             <div class="group relative">
                 <button onclick="window.app.showFriendView()" class="w-12 h-12 rounded-[24px] group-hover:rounded-[16px] bg-[#313338] group-hover:bg-[#5865f2] transition-all duration-200 flex items-center justify-center text-gray-200 group-hover:text-white relative overflow-hidden">
@@ -85,16 +153,13 @@
             <div class="w-12 h-12 rounded-[24px] bg-[#313338] hover:bg-green-600 hover:rounded-[16px] transition-all cursor-pointer flex items-center justify-center text-green-500 hover:text-white">
                 <i class="fa-solid fa-plus"></i>
             </div>
-            <div class="w-12 h-12 rounded-[24px] bg-[#313338] hover:bg-[#5865f2] hover:rounded-[16px] transition-all cursor-pointer flex items-center justify-center overflow-hidden">
-                <img src="https://picsum.photos/50/50?random=1" class="w-full h-full object-cover">
-            </div>
         </nav>
 
         <!-- CHANNEL SIDEBAR (Middle Left) -->
-        <div class="w-60 bg-[#2b2d31] flex flex-col shrink-0">
+        <div class="w-60 bg-[#2b2d31] flex flex-col shrink-0 z-10">
             <!-- Search/Header -->
             <div class="h-12 shadow-sm flex items-center px-4 border-b border-[#1f2023]">
-                <button class="w-full text-left bg-[#1e1f22] text-gray-400 text-sm px-2 py-1 rounded hover:text-gray-200 transition-colors">
+                <button onclick="window.app.showFriendView()" class="w-full text-left bg-[#1e1f22] text-gray-400 text-sm px-2 py-1 rounded hover:text-gray-200 transition-colors">
                     Find or start a conversation
                 </button>
             </div>
@@ -121,29 +186,29 @@
             
             <!-- User Control Panel -->
             <div class="h-[52px] bg-[#232428] flex items-center px-2">
-                <div class="group flex items-center mr-auto pl-1 py-1 rounded hover:bg-[#3f4147] cursor-pointer">
-                    <div class="relative w-8 h-8 mr-2">
-                        <img src="https://picsum.photos/32/32?u=me" class="rounded-full w-full h-full border border-gray-600">
+                <div onclick="window.app.openSettings()" class="group flex items-center mr-auto pl-1 py-1 rounded hover:bg-[#3f4147] cursor-pointer w-full">
+                    <div class="relative w-8 h-8 mr-2 shrink-0">
+                        <img id="current-user-avatar" src="https://picsum.photos/32/32?u=me" class="rounded-full w-full h-full border border-gray-600 object-cover">
                         <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-[#232428]"></div>
                     </div>
-                    <div class="text-sm">
-                        <div id="current-username-display" class="font-bold text-white leading-tight">Username</div>
-                        <div class="text-[10px] text-gray-400">#0000</div>
+                    <div class="text-sm overflow-hidden">
+                        <div id="current-display-name" class="font-bold text-white leading-tight truncate">Username</div>
+                        <div id="current-username-display" class="text-[10px] text-gray-400 truncate">#0000</div>
                     </div>
                 </div>
-                <div class="flex items-center space-x-1">
+                <div class="flex items-center space-x-1 shrink-0">
                     <button class="p-2 rounded hover:bg-[#3f4147] text-gray-400 hover:text-gray-200"><i class="fa-solid fa-microphone-slash text-xs"></i></button>
                     <button class="p-2 rounded hover:bg-[#3f4147] text-gray-400 hover:text-gray-200"><i class="fa-solid fa-headphones text-xs"></i></button>
-                    <button class="p-2 rounded hover:bg-[#3f4147] text-gray-400 hover:text-gray-200"><i class="fa-solid fa-gear text-xs"></i></button>
+                    <button onclick="window.app.openSettings()" class="p-2 rounded hover:bg-[#3f4147] text-gray-400 hover:text-gray-200"><i class="fa-solid fa-gear text-xs"></i></button>
                 </div>
             </div>
         </div>
 
         <!-- MAIN CONTENT (Right) -->
-        <main id="main-content" class="flex-1 bg-[#313338] flex flex-col min-w-0">
+        <main id="main-content" class="flex-1 bg-[#313338] flex min-w-0 relative">
             
             <!-- FRIEND VIEW (Default) -->
-            <div id="friend-view" class="flex flex-col h-full">
+            <div id="friend-view" class="flex-1 flex flex-col h-full w-full">
                 <!-- Top Nav -->
                 <div class="h-12 border-b border-[#26272d] flex items-center px-4 shrink-0">
                     <div class="flex items-center text-gray-400 mr-4 border-r border-[#3f4147] pr-4">
@@ -151,82 +216,130 @@
                         <span class="font-bold text-white">Friends</span>
                     </div>
                     <div class="flex space-x-4 text-gray-400 text-sm font-medium">
-                        <button class="hover:text-gray-200 px-2 py-0.5 rounded hover:bg-[#3f4147] text-white">Online</button>
-                        <button class="hover:text-gray-200 px-2 py-0.5 rounded hover:bg-[#3f4147]">All</button>
-                        <button class="hover:text-gray-200 px-2 py-0.5 rounded hover:bg-[#3f4147]">Pending</button>
-                        <button class="text-white bg-green-600 px-2 py-0.5 rounded hover:bg-green-700 transition-colors">Add Friend</button>
+                        <button onclick="window.app.switchFriendTab('online')" id="tab-online" class="tab-btn hover:text-gray-200 px-2 py-0.5 rounded hover:bg-[#3f4147]">Online</button>
+                        <button onclick="window.app.switchFriendTab('all')" id="tab-all" class="tab-btn hover:text-gray-200 px-2 py-0.5 rounded hover:bg-[#3f4147] active">All</button>
+                        <button onclick="window.app.switchFriendTab('pending')" id="tab-pending" class="tab-btn hover:text-gray-200 px-2 py-0.5 rounded hover:bg-[#3f4147] flex items-center">
+                            Pending 
+                            <span id="nav-pending-badge" class="ml-2 bg-red-500 text-white text-[10px] px-1 rounded-full hidden">0</span>
+                        </button>
+                        <button onclick="window.app.switchFriendTab('add')" id="tab-add" class="tab-btn text-white bg-green-600 px-2 py-0.5 rounded hover:bg-green-700 transition-colors">Add Friend</button>
                     </div>
                 </div>
 
-                <!-- Add Friend Content -->
+                <!-- Friend View Content Areas -->
                 <div class="p-8 flex-1 overflow-y-auto">
-                    <h2 class="uppercase text-white font-bold mb-2">Add Friend</h2>
-                    <p class="text-xs text-gray-400 mb-4">You can add a friend with their username. It's case sensitive!</p>
                     
-                    <form id="add-friend-form" class="relative mb-8">
-                        <input id="add-friend-input" type="text" placeholder="Enter a Username" class="w-full bg-[#1e1f22] border border-black rounded p-4 text-white focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] transition-all">
-                        <button type="submit" class="absolute right-3 top-2.5 bg-[#5865f2] text-white px-4 py-1.5 rounded text-sm hover:bg-[#4752c4]">Send Friend Request</button>
-                        <p id="friend-request-status" class="mt-2 text-sm h-5"></p>
-                    </form>
-
-                    <hr class="border-[#3f4147] mb-8">
-
-                    <!-- Lists -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        <div>
-                            <h3 class="uppercase text-gray-400 text-xs font-bold mb-4">Pending Requests - <span id="pending-count">0</span></h3>
-                            <div id="pending-list" class="space-y-2">
-                                <!-- Pending items injected here -->
-                            </div>
-                        </div>
+                    <!-- ADD FRIEND TAB -->
+                    <div id="section-add-friend" class="hidden">
+                        <h2 class="uppercase text-white font-bold mb-2">Add Friend</h2>
+                        <p class="text-xs text-gray-400 mb-4">You can add a friend with their username. It's case sensitive!</p>
                         
-                        <div>
-                            <h3 class="uppercase text-gray-400 text-xs font-bold mb-4">All Friends</h3>
-                            <div id="friends-list" class="space-y-2">
-                                <!-- Friend items injected here -->
-                            </div>
+                        <form id="add-friend-form" class="relative mb-8">
+                            <input id="add-friend-input" type="text" placeholder="Enter a Username" class="w-full bg-[#1e1f22] border border-black rounded p-4 text-white focus:outline-none focus:border-[#5865f2] focus:ring-1 focus:ring-[#5865f2] transition-all">
+                            <button type="submit" class="absolute right-3 top-2.5 bg-[#5865f2] text-white px-4 py-1.5 rounded text-sm hover:bg-[#4752c4]">Send Friend Request</button>
+                            <p id="friend-request-status" class="mt-2 text-sm h-5"></p>
+                        </form>
+                    </div>
+
+                    <!-- PENDING TAB -->
+                    <div id="section-pending" class="hidden">
+                        <h3 class="uppercase text-gray-400 text-xs font-bold mb-4">Pending Requests - <span id="pending-count">0</span></h3>
+                        <div id="pending-list" class="space-y-2">
+                            <!-- Pending items injected here -->
+                            <div class="text-gray-500 text-sm italic">No pending requests.</div>
+                        </div>
+                    </div>
+
+                    <!-- ALL / ONLINE TABS -->
+                    <div id="section-friend-list" class="">
+                        <h3 class="uppercase text-gray-400 text-xs font-bold mb-4">All Friends</h3>
+                        <div id="friends-list" class="space-y-2">
+                            <!-- Friend items injected here -->
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- CHAT VIEW (Hidden by default) -->
-            <div id="chat-view" class="hidden flex flex-col h-full">
-                <!-- Header -->
-                <div class="h-12 border-b border-[#26272d] flex items-center px-4 justify-between shrink-0 shadow-sm">
-                    <div class="flex items-center">
-                        <i class="fa-solid fa-at text-gray-400 text-xl mr-3"></i>
-                        <span id="chat-header-name" class="font-bold text-white mr-2">Username</span>
-                        <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    </div>
-                    <div class="flex space-x-4 text-gray-400">
-                        <i class="fa-solid fa-phone hover:text-gray-200 cursor-pointer"></i>
-                        <i class="fa-solid fa-video hover:text-gray-200 cursor-pointer"></i>
-                        <i class="fa-solid fa-thumbtack hover:text-gray-200 cursor-pointer"></i>
-                        <i class="fa-solid fa-user-group hover:text-gray-200 cursor-pointer"></i>
-                        <div class="relative">
-                            <input type="text" placeholder="Search" class="bg-[#1e1f22] text-xs px-2 py-1 rounded text-white w-32 transition-all focus:w-48">
+            <!-- CHAT VIEW CONTAINER -->
+            <div id="chat-view" class="hidden flex-1 flex h-full min-w-0">
+                
+                <!-- Chat Main Area -->
+                <div class="flex-1 flex flex-col min-w-0">
+                    <!-- Header -->
+                    <div class="h-12 border-b border-[#26272d] flex items-center px-4 justify-between shrink-0 shadow-sm">
+                        <div class="flex items-center cursor-pointer hover:text-gray-200" onclick="window.app.toggleUserProfile()">
+                            <i class="fa-solid fa-at text-gray-400 text-xl mr-3"></i>
+                            <span id="chat-header-name" class="font-bold text-white mr-2">Username</span>
+                            <div class="w-2 h-2 rounded-full bg-green-500"></div>
                         </div>
+                        <div class="flex space-x-4 text-gray-400">
+                            <i class="fa-solid fa-phone hover:text-gray-200 cursor-pointer"></i>
+                            <i class="fa-solid fa-video hover:text-gray-200 cursor-pointer"></i>
+                            <i class="fa-solid fa-user-group hover:text-gray-200 cursor-pointer" onclick="window.app.toggleUserProfile()"></i>
+                            <div class="relative">
+                                <input type="text" placeholder="Search" class="bg-[#1e1f22] text-xs px-2 py-1 rounded text-white w-32 transition-all focus:w-48">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col-reverse">
+                        <!-- Messages Injected Here -->
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="px-4 pb-6 pt-2 shrink-0">
+                        <form id="message-form" class="relative bg-[#383a40] rounded-lg p-3">
+                            <button type="button" class="absolute left-4 top-3.5 text-gray-400 hover:text-gray-200 rounded-full bg-gray-500 w-6 h-6 flex items-center justify-center text-[10px]"><i class="fa-solid fa-plus font-bold text-[#383a40]"></i></button>
+                            <input id="message-input" type="text" autocomplete="off" placeholder="Message @User" class="w-full bg-transparent text-white pl-10 pr-10 focus:outline-none">
+                            <div class="absolute right-4 top-3 flex space-x-3 text-gray-400">
+                                <i class="fa-solid fa-gift hover:text-gray-200 cursor-pointer"></i>
+                                <i class="fa-solid fa-note-sticky hover:text-gray-200 cursor-pointer"></i>
+                                <i class="fa-regular fa-face-smile hover:text-gray-200 cursor-pointer"></i>
+                            </div>
+                        </form>
                     </div>
                 </div>
 
-                <!-- Messages -->
-                <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4 flex flex-col-reverse">
-                    <!-- Messages Injected Here -->
+                <!-- RIGHT PROFILE SIDEBAR -->
+                <div id="user-profile-sidebar" class="w-[300px] bg-[#232428] border-l border-[#1f2023] flex flex-col shrink-0 hidden">
+                    <!-- Banner -->
+                    <div id="profile-sidebar-banner" class="h-[100px] bg-[#5865f2] relative bg-cover bg-center">
+                         <!-- Close Button -->
+                        <div class="absolute top-2 right-2 z-10">
+                            <button onclick="window.app.toggleUserProfile()" class="w-6 h-6 rounded-full bg-black/50 text-white flex items-center justify-center hover:bg-black/70">
+                                <i class="fa-solid fa-xmark text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Avatar & Info -->
+                    <div class="px-4 pb-4 relative">
+                        <div class="w-[80px] h-[80px] rounded-full border-[6px] border-[#232428] absolute -top-[40px] bg-[#232428]">
+                            <img id="profile-sidebar-avatar" src="https://picsum.photos/80/80" class="w-full h-full rounded-full object-cover">
+                            <div class="absolute bottom-1 right-1 w-4 h-4 bg-green-500 rounded-full border-[3px] border-[#232428]"></div>
+                        </div>
+                        
+                        <div class="pt-12 mb-4 bg-[#111214] rounded-lg p-3 mt-2">
+                             <div id="profile-sidebar-displayname" class="font-bold text-white text-lg leading-tight">Display Name</div>
+                             <div id="profile-sidebar-username" class="text-sm text-gray-400">user</div>
+                             
+                             <div class="border-t border-[#2f3136] my-3"></div>
+                             
+                             <div class="text-xs font-bold uppercase text-gray-400 mb-1">About Me</div>
+                             <div id="profile-sidebar-bio" class="text-sm text-gray-300 whitespace-pre-wrap"></div>
+                             
+                             <div class="border-t border-[#2f3136] my-3"></div>
+                             
+                             <div class="text-xs font-bold uppercase text-gray-400 mb-1">Member Since</div>
+                             <div class="text-sm text-gray-300">Jan 12, 2024</div>
+                        </div>
+
+                        <div class="text-xs font-bold uppercase text-gray-400 mb-2">Note</div>
+                        <textarea class="w-full bg-[#111214] text-gray-300 text-xs p-2 rounded resize-none focus:outline-none h-16 mb-4" placeholder="Click to add a note"></textarea>
+                    </div>
                 </div>
 
-                <!-- Input Area -->
-                <div class="px-4 pb-6 pt-2 shrink-0">
-                    <form id="message-form" class="relative bg-[#383a40] rounded-lg p-3">
-                        <button type="button" class="absolute left-4 top-3.5 text-gray-400 hover:text-gray-200 rounded-full bg-gray-500 w-6 h-6 flex items-center justify-center text-[10px]"><i class="fa-solid fa-plus font-bold text-[#383a40]"></i></button>
-                        <input id="message-input" type="text" autocomplete="off" placeholder="Message @User" class="w-full bg-transparent text-white pl-10 pr-10 focus:outline-none">
-                        <div class="absolute right-4 top-3 flex space-x-3 text-gray-400">
-                            <i class="fa-solid fa-gift hover:text-gray-200 cursor-pointer"></i>
-                            <i class="fa-solid fa-note-sticky hover:text-gray-200 cursor-pointer"></i>
-                            <i class="fa-regular fa-face-smile hover:text-gray-200 cursor-pointer"></i>
-                        </div>
-                    </form>
-                </div>
             </div>
 
         </main>
@@ -239,7 +352,7 @@
         import { 
             getFirestore, collection, doc, setDoc, getDoc, addDoc, 
             query, where, onSnapshot, orderBy, serverTimestamp, 
-            updateDoc, or, and, limit
+            updateDoc, or, and, limit, getDocs
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // CONFIG
@@ -259,8 +372,11 @@
         
         // STATE
         let currentUser = null;
+        let currentUserProfile = {};
         let activeChatId = null;
+        let activeChatUser = null;
         let unsubscribeMessages = null;
+        let showUserProfile = true; // default open in PMs like Discord sometimes, or closed. Let's default true for visibility.
 
         // --- DOM ELEMENTS ---
         const loginScreen = document.getElementById('login-screen');
@@ -270,6 +386,8 @@
         const loginError = document.getElementById('login-error');
         
         const currentUsernameDisplay = document.getElementById('current-username-display');
+        const currentDisplayName = document.getElementById('current-display-name');
+        const currentUserAvatar = document.getElementById('current-user-avatar');
         
         const friendView = document.getElementById('friend-view');
         const chatView = document.getElementById('chat-view');
@@ -281,6 +399,7 @@
         
         const pendingList = document.getElementById('pending-list');
         const pendingCount = document.getElementById('pending-count');
+        const navPendingBadge = document.getElementById('nav-pending-badge');
         const friendsList = document.getElementById('friends-list');
         const dmList = document.getElementById('dm-list');
         
@@ -288,6 +407,12 @@
         const messageForm = document.getElementById('message-form');
         const messageInput = document.getElementById('message-input');
         const chatHeaderName = document.getElementById('chat-header-name');
+        
+        const profileSidebar = document.getElementById('user-profile-sidebar');
+
+        // Settings Modal
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsForm = document.getElementById('settings-form');
 
         // --- AUTH LOGIC ---
         loginForm.addEventListener('submit', async (e) => {
@@ -303,6 +428,10 @@
                 if (!userSnap.exists()) {
                     await setDoc(userRef, {
                         username: username,
+                        displayName: username, // Default display name
+                        avatarUrl: `https://picsum.photos/32/32?u=${username}`,
+                        bannerUrl: "",
+                        bio: "",
                         createdAt: serverTimestamp(),
                         status: 'online'
                     });
@@ -311,7 +440,6 @@
                 }
 
                 currentUser = username;
-                currentUsernameDisplay.textContent = username;
                 
                 // UI Switch
                 loginScreen.classList.add('hidden');
@@ -329,9 +457,110 @@
         // --- APP LOGIC ---
 
         function initApp() {
+            listenForCurrentUser();
             listenForFriendRequests();
             listenForChats();
         }
+
+        function listenForCurrentUser() {
+            onSnapshot(doc(db, "users", currentUser), (doc) => {
+                if(doc.exists()) {
+                    currentUserProfile = doc.data();
+                    renderCurrentUser();
+                }
+            });
+        }
+
+        function renderCurrentUser() {
+            currentUsernameDisplay.textContent = `#${currentUser}`;
+            currentDisplayName.textContent = currentUserProfile.displayName || currentUser;
+            currentUserAvatar.src = currentUserProfile.avatarUrl || `https://picsum.photos/32/32?u=${currentUser}`;
+        }
+
+        // --- USER SETTINGS ---
+        
+        window.app = window.app || {};
+        window.app.openSettings = () => {
+            // Populate form
+            document.getElementById('input-display-name').value = currentUserProfile.displayName || currentUser;
+            document.getElementById('input-avatar-url').value = currentUserProfile.avatarUrl || "";
+            document.getElementById('input-banner-url').value = currentUserProfile.bannerUrl || "";
+            document.getElementById('input-bio').value = currentUserProfile.bio || "";
+            
+            updateSettingsPreview();
+            
+            settingsModal.classList.remove('hidden');
+        };
+
+        window.app.saveProfile = async () => {
+            const newDisplayName = document.getElementById('input-display-name').value.trim() || currentUser;
+            const newAvatar = document.getElementById('input-avatar-url').value.trim();
+            const newBanner = document.getElementById('input-banner-url').value.trim();
+            const newBio = document.getElementById('input-bio').value.trim();
+
+            try {
+                await updateDoc(doc(db, "users", currentUser), {
+                    displayName: newDisplayName,
+                    avatarUrl: newAvatar,
+                    bannerUrl: newBanner,
+                    bio: newBio
+                });
+                settingsModal.classList.add('hidden');
+            } catch(e) {
+                alert("Failed to save profile: " + e.message);
+            }
+        };
+        
+        // Live Preview Logic
+        const settingsInputs = ['input-display-name', 'input-avatar-url', 'input-banner-url', 'input-bio'];
+        settingsInputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updateSettingsPreview);
+        });
+
+        function updateSettingsPreview() {
+             const dn = document.getElementById('input-display-name').value || currentUser;
+             const av = document.getElementById('input-avatar-url').value || `https://picsum.photos/80/80?u=${currentUser}`;
+             const bn = document.getElementById('input-banner-url').value;
+             const bio = document.getElementById('input-bio').value || "Hello!";
+             
+             document.getElementById('settings-preview-displayname').textContent = dn;
+             document.getElementById('settings-preview-username').textContent = currentUser;
+             document.getElementById('settings-preview-avatar').src = av;
+             document.getElementById('settings-preview-bio').textContent = bio;
+             
+             const bannerEl = document.getElementById('settings-preview-banner');
+             if(bn) {
+                 bannerEl.style.backgroundImage = `url('${bn}')`;
+                 bannerEl.classList.remove('default-banner');
+             } else {
+                 bannerEl.style.backgroundImage = 'none';
+                 bannerEl.classList.add('default-banner');
+             }
+        }
+
+        // --- TAB NAVIGATION ---
+        
+        window.app.switchFriendTab = (tab) => {
+            // Reset Tabs
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-[#3f4147]', 'text-white'));
+            const activeBtn = document.getElementById(`tab-${tab}`);
+            if(activeBtn && tab !== 'add') activeBtn.classList.add('active'); // 'add' button has green style, don't override generic active
+
+            // Hide all sections
+            document.getElementById('section-add-friend').classList.add('hidden');
+            document.getElementById('section-pending').classList.add('hidden');
+            document.getElementById('section-friend-list').classList.add('hidden');
+            
+            // Show selected
+            if (tab === 'add') {
+                document.getElementById('section-add-friend').classList.remove('hidden');
+            } else if (tab === 'pending') {
+                document.getElementById('section-pending').classList.remove('hidden');
+            } else if (tab === 'all' || tab === 'online') {
+                document.getElementById('section-friend-list').classList.remove('hidden');
+                // Filter list visually if needed, but for now we just show the list
+            }
+        };
 
         // --- FRIEND MANAGEMENT ---
 
@@ -361,7 +590,7 @@
                         and(where("from", "==", targetUsername), where("to", "==", currentUser))
                     )
                 );
-                const existing = await getDocsOnce(q); // Helper below
+                const existing = await getDocs(q); 
                 if (!existing.empty) {
                     setStatus("Friend request already pending or accepted.", "text-yellow-500");
                     return;
@@ -390,22 +619,26 @@
             setTimeout(() => { friendRequestStatus.textContent = ""; }, 3000);
         }
 
-        // Helper for one-time fetch since getDocs isn't imported to keep imports clean? 
-        // Oh wait, I didn't import getDocs. Let's use getDocs from firestore.
-        // Actually, let's just use onSnapshot for everything or import getDocs dynamically if needed.
-        // I'll add getDocs to imports.
-        import { getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        async function getDocsOnce(q) {
-            return await getDocs(q);
-        }
-
         function listenForFriendRequests() {
             // Incoming Requests
             const qIncoming = query(collection(db, "friend_requests"), where("to", "==", currentUser), where("status", "==", "pending"));
             
             onSnapshot(qIncoming, (snapshot) => {
-                pendingCount.textContent = snapshot.docs.length;
+                const count = snapshot.docs.length;
+                pendingCount.textContent = count;
+                
+                // Nav Badge
+                if(count > 0) {
+                    navPendingBadge.textContent = count;
+                    navPendingBadge.classList.remove('hidden');
+                } else {
+                    navPendingBadge.classList.add('hidden');
+                }
+
                 pendingList.innerHTML = '';
+                if(count === 0) {
+                    pendingList.innerHTML = '<div class="text-gray-500 text-sm italic">No pending requests.</div>';
+                }
                 
                 snapshot.forEach(docSnap => {
                     const data = docSnap.data();
@@ -413,7 +646,7 @@
                     el.className = "flex items-center justify-between bg-[#2b2d31] p-3 rounded hover:bg-[#35373c] group border border-gray-800 hover:border-gray-700 transition-all";
                     el.innerHTML = `
                         <div class="flex items-center">
-                            <img src="https://picsum.photos/32/32?u=${data.from}" class="w-8 h-8 rounded-full mr-3">
+                            <img src="https://picsum.photos/32/32?u=${data.from}" class="w-8 h-8 rounded-full mr-3 border border-gray-600">
                             <div>
                                 <div class="text-white font-bold text-sm">${data.from}</div>
                                 <div class="text-xs text-gray-400">Incoming Friend Request</div>
@@ -436,14 +669,6 @@
                     btn.addEventListener('click', () => acceptRequest(btn.dataset.id, btn.dataset.from));
                 });
             });
-
-            // Friends List (Accepted Requests) - Simplified logic: Query requests where (to==me OR from==me) AND status=='accepted'
-            const qFriends1 = query(collection(db, "friend_requests"), where("to", "==", currentUser), where("status", "==", "accepted"));
-            const qFriends2 = query(collection(db, "friend_requests"), where("from", "==", currentUser), where("status", "==", "accepted"));
-
-            // Note: managing two streams is annoying. Ideally we'd sync this to a 'chats' collection.
-            // When request is accepted, we will CREATE a chat document. 
-            // So we will listen to the 'chats' collection for the friends list/DM list.
         }
 
         async function acceptRequest(reqId, fromUser) {
@@ -451,7 +676,7 @@
                 // 1. Update Request status
                 await updateDoc(doc(db, "friend_requests", reqId), { status: 'accepted' });
 
-                // 2. Create Chat Doc (Composite ID to ensure uniqueness: user1_user2 sorted)
+                // 2. Create Chat Doc (Composite ID)
                 const participants = [currentUser, fromUser].sort();
                 const chatId = participants.join("_");
                 
@@ -470,43 +695,49 @@
             }
         }
 
-        // --- CHAT LIST LOGIC ---
+        // --- CHAT LIST & SIDEBAR LOGIC ---
 
         function listenForChats() {
             const q = query(collection(db, "chats"), where("participants", "array-contains", currentUser));
             
             onSnapshot(q, (snapshot) => {
                 dmList.innerHTML = '';
-                friendsList.innerHTML = ''; // Also populating "All Friends" from chats for simplicity
+                friendsList.innerHTML = ''; 
                 
-                snapshot.forEach(docSnap => {
+                snapshot.forEach(async (docSnap) => {
                     const data = docSnap.data();
                     const otherUser = data.participants.find(p => p !== currentUser);
+                    
+                    // Fetch other user profile for Display Name and Avatar
+                    // Optimization: In a real app, cache these or store basics in the chat doc. 
+                    // For now we fetch async which might cause slight pop-in.
+                    const userDoc = await getDoc(doc(db, "users", otherUser));
+                    const userData = userDoc.exists() ? userDoc.data() : { displayName: otherUser, avatarUrl: `https://picsum.photos/32/32?u=${otherUser}` };
                     
                     // Add to Sidebar
                     const sidebarItem = document.createElement('div');
                     sidebarItem.className = `flex items-center px-2 py-2 rounded cursor-pointer group hover:bg-[#35373c] text-gray-400 hover:text-gray-100 ${activeChatId === docSnap.id ? 'bg-[#404249] text-white' : ''}`;
                     sidebarItem.innerHTML = `
-                        <div class="relative w-8 h-8 mr-3">
-                            <img src="https://picsum.photos/32/32?u=${otherUser}" class="rounded-full w-full h-full">
+                        <div class="relative w-8 h-8 mr-3 shrink-0">
+                            <img src="${userData.avatarUrl || 'https://picsum.photos/32/32'}" class="rounded-full w-full h-full object-cover">
                             <div class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-gray-500 rounded-full border-2 border-[#2b2d31]"></div> 
                         </div>
                         <div class="flex-1 overflow-hidden">
-                            <div class="truncate font-medium text-sm ${activeChatId === docSnap.id ? 'text-white' : ''}">${otherUser}</div>
+                            <div class="truncate font-medium text-sm ${activeChatId === docSnap.id ? 'text-white' : ''}">${userData.displayName || otherUser}</div>
                         </div>
                     `;
-                    sidebarItem.onclick = () => openChat(docSnap.id, otherUser);
+                    sidebarItem.onclick = () => openChat(docSnap.id, otherUser, userData);
                     dmList.appendChild(sidebarItem);
 
                     // Add to Friends List (Main View)
                     const friendItem = document.createElement('div');
                     friendItem.className = "flex items-center justify-between bg-[#2b2d31] p-3 rounded border border-gray-800 border-t border-t-[#3f4147] hover:bg-[#35373c] cursor-pointer group";
-                    friendItem.onclick = () => openChat(docSnap.id, otherUser);
+                    friendItem.onclick = () => openChat(docSnap.id, otherUser, userData);
                     friendItem.innerHTML = `
                          <div class="flex items-center">
-                            <img src="https://picsum.photos/32/32?u=${otherUser}" class="w-8 h-8 rounded-full mr-3">
+                            <img src="${userData.avatarUrl || 'https://picsum.photos/32/32'}" class="w-8 h-8 rounded-full mr-3 object-cover">
                             <div>
-                                <div class="text-white font-bold text-sm">${otherUser}</div>
+                                <div class="text-white font-bold text-sm">${userData.displayName || otherUser}</div>
                                 <div class="text-xs text-gray-400">Online</div>
                             </div>
                         </div>
@@ -521,39 +752,70 @@
 
         // --- MESSAGING LOGIC ---
 
-        window.app = {
-            showFriendView: () => {
-                activeChatId = null;
-                friendView.classList.remove('hidden');
-                chatView.classList.add('hidden');
-                
-                // Update active state in sidebar
-                btnFriendsView.classList.add('bg-[#404249]', 'text-white');
-                Array.from(dmList.children).forEach(child => child.classList.remove('bg-[#404249]', 'text-white'));
-            }
+        window.app.showFriendView = () => {
+            activeChatId = null;
+            friendView.classList.remove('hidden');
+            chatView.classList.add('hidden');
+            
+            // Sidebar
+            btnFriendsView.classList.add('bg-[#404249]', 'text-white');
+            Array.from(dmList.children).forEach(child => child.classList.remove('bg-[#404249]', 'text-white'));
         };
 
-        function openChat(chatId, otherUser) {
+        function openChat(chatId, otherUsername, userData) {
             activeChatId = chatId;
+            activeChatUser = otherUsername;
+            
             friendView.classList.add('hidden');
             chatView.classList.remove('hidden');
             
             // UI Header
-            chatHeaderName.textContent = otherUser;
-            messageInput.placeholder = `Message @${otherUser}`;
+            chatHeaderName.textContent = userData.displayName || otherUsername;
+            messageInput.placeholder = `Message @${userData.displayName || otherUsername}`;
             
+            // Update Profile Sidebar content
+            updateProfileSidebar(otherUsername, userData);
+
             // Sidebar Active State
             btnFriendsView.classList.remove('bg-[#404249]', 'text-white');
-            // Re-render chat list to update highlights is inefficient but works for this scale, 
-            // actually just finding the element is better but we are lazy, let the snapshot update handle styles?
-            // Snapshot updates styles on data change, but simply clicking doesn't change data.
-            // Manually toggle classes:
-            Array.from(dmList.children).forEach(el => {
-                if(el.textContent.includes(otherUser)) el.classList.add('bg-[#404249]', 'text-white');
-                else el.classList.remove('bg-[#404249]', 'text-white');
-            });
+            // Note: Efficient re-highlighting done by listener re-render or manual class toggle logic here
 
             loadMessages(chatId);
+        }
+
+        window.app.toggleUserProfile = () => {
+            if(profileSidebar.classList.contains('hidden')) {
+                profileSidebar.classList.remove('hidden');
+            } else {
+                profileSidebar.classList.add('hidden');
+            }
+        };
+
+        async function updateProfileSidebar(username, preloadedData) {
+            // If we have passed data, render it immediately. Then fetch latest.
+            const render = (data) => {
+                 document.getElementById('profile-sidebar-displayname').textContent = data.displayName || username;
+                 document.getElementById('profile-sidebar-username').textContent = username;
+                 document.getElementById('profile-sidebar-avatar').src = data.avatarUrl || `https://picsum.photos/80/80?u=${username}`;
+                 document.getElementById('profile-sidebar-bio').textContent = data.bio || "";
+                 
+                 const bannerEl = document.getElementById('profile-sidebar-banner');
+                 if(data.bannerUrl) {
+                     bannerEl.style.backgroundImage = `url('${data.bannerUrl}')`;
+                     bannerEl.classList.remove('default-banner');
+                 } else {
+                     bannerEl.style.backgroundImage = 'none';
+                     bannerEl.classList.add('default-banner');
+                 }
+            };
+
+            if(preloadedData) render(preloadedData);
+
+            // Fetch fresh
+            const docSnap = await getDoc(doc(db, "users", username));
+            if(docSnap.exists()) {
+                render(docSnap.data());
+            }
         }
 
         function loadMessages(chatId) {
@@ -568,25 +830,36 @@
             unsubscribeMessages = onSnapshot(q, (snapshot) => {
                 messagesContainer.innerHTML = '';
                 
-                // Process in reverse since we flex-col-reverse
-                snapshot.docs.forEach(docSnap => {
+                snapshot.docs.forEach(async (docSnap) => {
                     const msg = docSnap.data();
                     const isMe = msg.sender === currentUser;
                     
                     const el = document.createElement('div');
                     el.className = "flex group hover:bg-[#2e3035] -mx-4 px-4 py-1";
                     
-                    // Date formatting
+                    // Fetch sender data (could be cached)
+                    // If me, use currentUserProfile. If them, we could fetch or assume activeChatUser details
+                    let avatar = `https://picsum.photos/40/40?u=${msg.sender}`;
+                    let name = msg.sender;
+                    
+                    if(isMe) {
+                        avatar = currentUserProfile.avatarUrl || avatar;
+                        name = currentUserProfile.displayName || name;
+                    } else if (msg.sender === activeChatUser) {
+                        // We could grab from the sidebar info if we wanted, or fetch
+                        // For speed, just use generic or last known
+                    }
+
                     const date = msg.timestamp ? msg.timestamp.toDate() : new Date();
                     const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
                     el.innerHTML = `
                         <div class="mr-4 shrink-0 cursor-pointer mt-0.5">
-                            <img src="https://picsum.photos/40/40?u=${msg.sender}" class="w-10 h-10 rounded-full hover:brightness-90 transition-all">
+                            <img src="${avatar}" class="w-10 h-10 rounded-full hover:brightness-90 transition-all object-cover">
                         </div>
                         <div class="flex-1 min-w-0">
                             <div class="flex items-center mb-0.5">
-                                <span class="text-white font-medium mr-2 hover:underline cursor-pointer text-sm">${msg.sender}</span>
+                                <span class="text-white font-medium mr-2 hover:underline cursor-pointer text-sm">${name}</span>
                                 <span class="text-[10px] text-gray-400">${timeStr}</span>
                             </div>
                             <div class="text-gray-300 text-sm whitespace-pre-wrap leading-relaxed">${escapeHtml(msg.content)}</div>
@@ -602,17 +875,15 @@
             if (!activeChatId || !messageInput.value.trim()) return;
             
             const txt = messageInput.value.trim();
-            messageInput.value = ''; // clear immediately
+            messageInput.value = ''; 
 
             try {
-                // Add message
                 await addDoc(collection(db, "chats", activeChatId, "messages"), {
                     sender: currentUser,
                     content: txt,
                     timestamp: serverTimestamp()
                 });
                 
-                // Update chat last message
                 await updateDoc(doc(db, "chats", activeChatId), {
                     lastMessage: txt,
                     lastMessageTime: serverTimestamp()
