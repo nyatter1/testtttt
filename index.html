@@ -222,7 +222,7 @@
     <script type="module">
         import { initializeApp } from "firebase/app";
         import { getAnalytics } from "firebase/analytics";
-        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, setDoc } from "firebase/firestore";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, setDoc, deleteDoc } from "firebase/firestore";
         import { getAuth, signInAnonymously, onAuthStateChanged, updateProfile, signOut } from "firebase/auth";
 
         // --- Configuration ---
@@ -376,7 +376,24 @@
                 let count = 0;
                 
                 const users = [];
-                snapshot.forEach(doc => users.push(doc.data()));
+                snapshot.forEach(docSnapshot => {
+                    const data = docSnapshot.data();
+                    
+                    // VALIDATION & AUTO-CLEANUP
+                    const name = data.displayName;
+                    const isInvalid = !name || name === 'undefined' || name === 'null' || name.trim() === '';
+
+                    if (isInvalid) {
+                        // User requested to automatically delete undefined users
+                        // We attempt deletion, but wrap in catch block in case of permission errors
+                        deleteDoc(docSnapshot.ref).catch(err => {
+                            console.warn("Could not auto-delete invalid user (likely permission issue):", err);
+                        });
+                    } else {
+                        // Only add valid users to the list
+                        users.push(data);
+                    }
+                });
                 
                 // Sort users by name client-side
                 users.sort((a, b) => (a.displayName || '').localeCompare(b.displayName || ''));
